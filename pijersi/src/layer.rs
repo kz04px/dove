@@ -3,8 +3,8 @@ use std::{fmt, ops::Not};
 #[derive(Clone, Copy, PartialEq)]
 #[must_use]
 pub enum Layer {
-    Lower,
-    Upper,
+    Hidden,
+    Visible,
 }
 
 impl Not for Layer {
@@ -13,8 +13,8 @@ impl Not for Layer {
     #[must_use]
     fn not(self) -> Self {
         match self {
-            Layer::Lower => Layer::Upper,
-            Layer::Upper => Layer::Lower,
+            Layer::Hidden => Layer::Visible,
+            Layer::Visible => Layer::Hidden,
         }
     }
 }
@@ -22,8 +22,8 @@ impl Not for Layer {
 impl fmt::Display for Layer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Layer::Lower => write!(f, "lower"),
-            Layer::Upper => write!(f, "upper"),
+            Layer::Hidden => write!(f, "hidden"),
+            Layer::Visible => write!(f, "visible"),
         }
     }
 }

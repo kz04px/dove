@@ -66,20 +66,20 @@ impl Position {
 
     #[must_use]
     pub fn get_rock(&self) -> Bitboard {
-        self.pieces[Piece::Rock as usize][Layer::Lower as usize]
-            | self.pieces[Piece::Rock as usize][Layer::Upper as usize]
+        self.pieces[Piece::Rock as usize][Layer::Hidden as usize]
+            | self.pieces[Piece::Rock as usize][Layer::Visible as usize]
     }
 
     #[must_use]
     pub fn get_paper(&self) -> Bitboard {
-        self.pieces[Piece::Paper as usize][Layer::Lower as usize]
-            | self.pieces[Piece::Paper as usize][Layer::Upper as usize]
+        self.pieces[Piece::Paper as usize][Layer::Hidden as usize]
+            | self.pieces[Piece::Paper as usize][Layer::Visible as usize]
     }
 
     #[must_use]
     pub fn get_scissors(&self) -> Bitboard {
-        self.pieces[Piece::Scissors as usize][Layer::Lower as usize]
-            | self.pieces[Piece::Scissors as usize][Layer::Upper as usize]
+        self.pieces[Piece::Scissors as usize][Layer::Hidden as usize]
+            | self.pieces[Piece::Scissors as usize][Layer::Visible as usize]
     }
 
     #[must_use]
@@ -89,40 +89,26 @@ impl Position {
 
     #[must_use]
     pub fn get_wise(&self) -> Bitboard {
-        self.pieces[Piece::Wise as usize][Layer::Lower as usize]
-            | self.pieces[Piece::Wise as usize][Layer::Upper as usize]
-    }
-
-    #[must_use]
-    pub fn get_lower(&self) -> Bitboard {
-        self.pieces[Piece::Rock as usize][Layer::Lower as usize]
-            | self.pieces[Piece::Paper as usize][Layer::Lower as usize]
-            | self.pieces[Piece::Scissors as usize][Layer::Lower as usize]
-            | self.pieces[Piece::Wise as usize][Layer::Lower as usize]
-    }
-
-    #[must_use]
-    pub fn get_upper(&self) -> Bitboard {
-        self.pieces[Piece::Rock as usize][Layer::Upper as usize]
-            | self.pieces[Piece::Paper as usize][Layer::Upper as usize]
-            | self.pieces[Piece::Scissors as usize][Layer::Upper as usize]
-            | self.pieces[Piece::Wise as usize][Layer::Upper as usize]
+        self.pieces[Piece::Wise as usize][Layer::Hidden as usize]
+            | self.pieces[Piece::Wise as usize][Layer::Visible as usize]
     }
 
     #[must_use]
     pub fn get_short(&self) -> Bitboard {
-        self.get_lower() ^ self.get_upper()
+        self.get_occupied() ^ self.get_tall()
     }
 
     #[must_use]
     pub fn get_tall(&self) -> Bitboard {
-        self.get_upper()
+        self.pieces[Piece::Rock as usize][Layer::Hidden as usize]
+            | self.pieces[Piece::Paper as usize][Layer::Hidden as usize]
+            | self.pieces[Piece::Scissors as usize][Layer::Hidden as usize]
+            | self.pieces[Piece::Wise as usize][Layer::Hidden as usize]
     }
 
     #[must_use]
     pub fn get_visible(&self, piece: Piece) -> Bitboard {
-        self.pieces[piece as usize][Layer::Upper as usize]
-            | (self.pieces[piece as usize][Layer::Lower as usize] & !self.get_upper())
+        self.pieces[piece as usize][Layer::Visible as usize]
     }
 
     #[must_use]
@@ -170,11 +156,14 @@ impl fmt::Display for Position {
                 write!(f, "  ")?;
 
                 let sq = Square::from_coords(x, y);
-                let bottom = self.get_piece_on(Layer::Lower, sq);
-                let top = self.get_piece_on(Layer::Upper, sq);
+                let hidden = self.get_piece_on(Layer::Hidden, sq);
+                let visible = self.get_piece_on(Layer::Visible, sq);
                 let side = self.get_side_on(sq);
 
-                match (bottom, side) {
+                let lower = if hidden.is_some() { hidden } else { visible };
+                let upper = if hidden.is_some() { visible } else { None };
+
+                match (lower, side) {
                     (Some(Piece::Rock), Some(Side::White)) => write!(f, "R")?,
                     (Some(Piece::Rock), Some(Side::Black)) => write!(f, "r")?,
                     (Some(Piece::Paper), Some(Side::White)) => write!(f, "P")?,
@@ -187,7 +176,7 @@ impl fmt::Display for Position {
                     (_, _) => write!(f, "?")?,
                 }
 
-                match (top, side) {
+                match (upper, side) {
                     (Some(Piece::Rock), Some(Side::White)) => write!(f, "R")?,
                     (Some(Piece::Rock), Some(Side::Black)) => write!(f, "r")?,
                     (Some(Piece::Paper), Some(Side::White)) => write!(f, "P")?,

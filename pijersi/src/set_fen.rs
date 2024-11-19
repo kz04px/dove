@@ -31,78 +31,88 @@ impl Position {
             let mut parts = fen.split(' ');
             let mut x = 0;
             let mut y = 6;
-            let mut layer = Layer::Lower;
+            let mut layer = Layer::Hidden;
 
             // Board
             if let Some(part) = parts.next() {
-                for c in part.chars() {
+                for curr in part.chars() {
                     let sq = Square::from_coords(x, y);
                     let bb = Bitboard::from_square(&sq);
 
-                    match c {
+                    match curr {
                         'R' => {
                             self.sides[Side::White as usize] |= bb;
                             self.pieces[Piece::Rock as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += (layer == Layer::Lower) as i32;
+                            x += (layer == Layer::Hidden) as i32;
                         }
                         'P' => {
                             self.sides[Side::White as usize] |= bb;
                             self.pieces[Piece::Paper as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += (layer == Layer::Lower) as i32;
+                            x += (layer == Layer::Hidden) as i32;
                         }
                         'S' => {
                             self.sides[Side::White as usize] |= bb;
                             self.pieces[Piece::Scissors as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += (layer == Layer::Lower) as i32;
+                            x += (layer == Layer::Hidden) as i32;
                         }
                         'W' => {
                             self.sides[Side::White as usize] |= bb;
                             self.pieces[Piece::Wise as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += if layer == Layer::Lower { 1 } else { 0 };
+                            x += if layer == Layer::Hidden { 1 } else { 0 };
                         }
                         'r' => {
                             self.sides[Side::Black as usize] |= bb;
                             self.pieces[Piece::Rock as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += (layer == Layer::Lower) as i32;
+                            x += (layer == Layer::Hidden) as i32;
                         }
                         'p' => {
                             self.sides[Side::Black as usize] |= bb;
                             self.pieces[Piece::Paper as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += (layer == Layer::Lower) as i32;
+                            x += (layer == Layer::Hidden) as i32;
                         }
                         's' => {
                             self.sides[Side::Black as usize] |= bb;
                             self.pieces[Piece::Scissors as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += (layer == Layer::Lower) as i32;
+                            x += (layer == Layer::Hidden) as i32;
                         }
                         'w' => {
                             self.sides[Side::Black as usize] |= bb;
                             self.pieces[Piece::Wise as usize][layer as usize] ^= bb;
                             layer = !layer;
-                            x += (layer == Layer::Lower) as i32;
+                            x += (layer == Layer::Hidden) as i32;
                         }
                         '-' => {
                             x += 1;
-                            layer = Layer::Lower;
+                            layer = Layer::Hidden;
                         }
                         '1'..='7' => {
-                            x += (c as u8 - b'0') as i32;
-                            layer = Layer::Lower;
+                            x += (curr as u8 - b'0') as i32;
+                            layer = Layer::Hidden;
                         }
                         '/' => {
                             x = 0;
                             y -= 1;
-                            layer = Layer::Lower;
+                            layer = Layer::Hidden;
                         }
-                        _ => panic!("Unrecognised FEN board token {}", c),
+                        _ => panic!("Unrecognised FEN board token {}", curr),
                     }
+                }
+
+                // Promote hidden to visible
+                let stacks =
+                    self.pieces[0][1] | self.pieces[1][1] | self.pieces[2][1] | self.pieces[3][1];
+
+                for piece in [Piece::Rock, Piece::Paper, Piece::Scissors, Piece::Wise] {
+                    let promote = !stacks & self.pieces[piece as usize][Layer::Hidden as usize];
+                    self.pieces[piece as usize][Layer::Visible as usize] ^= promote;
+                    self.pieces[piece as usize][Layer::Hidden as usize] ^= promote;
                 }
             }
 
@@ -139,8 +149,8 @@ impl Position {
 
             for x in 0..6 + y % 2 {
                 let sq = Square::from_coords(x, y);
-                let piece_lower = self.get_piece_on(Layer::Lower, sq);
-                let piece_upper = self.get_piece_on(Layer::Upper, sq);
+                let piece_hidden = self.get_piece_on(Layer::Hidden, sq);
+                let piece_visible = self.get_piece_on(Layer::Visible, sq);
                 let side = self.get_side_on(sq);
 
                 let is_empty = side.is_none();
@@ -150,8 +160,8 @@ impl Position {
                     num_spaces = 0;
                 }
 
-                // Lower
-                match (piece_lower, side) {
+                // Hidden
+                match (piece_hidden, side) {
                     (Some(Piece::Rock), Some(Side::White)) => fen += "R",
                     (Some(Piece::Paper), Some(Side::White)) => fen += "P",
                     (Some(Piece::Scissors), Some(Side::White)) => fen += "S",
@@ -160,12 +170,11 @@ impl Position {
                     (Some(Piece::Paper), Some(Side::Black)) => fen += "p",
                     (Some(Piece::Scissors), Some(Side::Black)) => fen += "s",
                     (Some(Piece::Wise), Some(Side::Black)) => fen += "w",
-                    (None, None) => num_spaces += 1,
                     (_, _) => {}
                 }
 
-                // Upper
-                match (piece_upper, side) {
+                // Visible
+                match (piece_visible, side) {
                     (Some(Piece::Rock), Some(Side::White)) => fen += "R",
                     (Some(Piece::Paper), Some(Side::White)) => fen += "P",
                     (Some(Piece::Scissors), Some(Side::White)) => fen += "S",
@@ -174,10 +183,15 @@ impl Position {
                     (Some(Piece::Paper), Some(Side::Black)) => fen += "p",
                     (Some(Piece::Scissors), Some(Side::Black)) => fen += "s",
                     (Some(Piece::Wise), Some(Side::Black)) => fen += "w",
-                    (None, Some(_)) => {
-                        fen += "-";
-                    }
                     (_, _) => {}
+                }
+
+                if piece_hidden.is_none() && piece_visible.is_none() {
+                    num_spaces += 1;
+                }
+
+                if piece_hidden.is_none() && piece_visible.is_some() {
+                    fen += "-";
                 }
             }
 

@@ -9,12 +9,12 @@ const MATE_SCORE: i32 = 100_000_000;
 
 #[must_use]
 pub fn eval(pos: &Position) -> i32 {
-    let us_lower = pos.get_lower() & pos.get_us();
-    let us_upper = pos.get_upper() & pos.get_us();
+    let us_lower = pos.get_short() & pos.get_us();
+    let us_upper = pos.get_tall() & pos.get_us();
     let num_us = us_lower.count() + us_upper.count();
 
-    let them_lower = pos.get_lower() & pos.get_them();
-    let them_upper = pos.get_upper() & pos.get_them();
+    let them_lower = pos.get_short() & pos.get_them();
+    let them_upper = pos.get_tall() & pos.get_them();
     let num_them = them_lower.count() + them_upper.count();
 
     100 * (num_us - num_them)

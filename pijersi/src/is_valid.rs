@@ -10,45 +10,45 @@ impl Position {
         let white = self.sides[Side::White as usize];
         let black = self.sides[Side::Black as usize];
 
-        let lower_rock = self.pieces[Piece::Rock as usize][Layer::Lower as usize];
-        let lower_paper = self.pieces[Piece::Paper as usize][Layer::Lower as usize];
-        let lower_scissors = self.pieces[Piece::Scissors as usize][Layer::Lower as usize];
-        let lower_wise = self.pieces[Piece::Wise as usize][Layer::Lower as usize];
-        let lower_rps = lower_rock | lower_paper | lower_scissors;
+        let hidden_rock = self.pieces[Piece::Rock as usize][Layer::Hidden as usize];
+        let hidden_paper = self.pieces[Piece::Paper as usize][Layer::Hidden as usize];
+        let hidden_scissors = self.pieces[Piece::Scissors as usize][Layer::Hidden as usize];
+        let hidden_wise = self.pieces[Piece::Wise as usize][Layer::Hidden as usize];
+        let hidden_rps = hidden_rock | hidden_paper | hidden_scissors;
 
-        let upper_rock = self.pieces[Piece::Rock as usize][Layer::Upper as usize];
-        let upper_paper = self.pieces[Piece::Paper as usize][Layer::Upper as usize];
-        let upper_scissors = self.pieces[Piece::Scissors as usize][Layer::Upper as usize];
-        let upper_wise = self.pieces[Piece::Wise as usize][Layer::Upper as usize];
-        let _upper_rps = upper_rock | upper_paper | upper_scissors;
+        let visible_rock = self.pieces[Piece::Rock as usize][Layer::Visible as usize];
+        let visible_paper = self.pieces[Piece::Paper as usize][Layer::Visible as usize];
+        let visible_scissors = self.pieces[Piece::Scissors as usize][Layer::Visible as usize];
+        let visible_wise = self.pieces[Piece::Wise as usize][Layer::Visible as usize];
+        let _visible_rps = visible_rock | visible_paper | visible_scissors;
 
-        let lower = lower_rock | lower_paper | lower_scissors | lower_wise;
-        let upper = upper_rock | upper_paper | upper_scissors | upper_wise;
+        let hidden = hidden_rock | hidden_paper | hidden_scissors | hidden_wise;
+        let visible = visible_rock | visible_paper | visible_scissors | visible_wise;
 
-        // Floating pieces
-        debug_assert_eq!(upper & lower, upper);
+        // Exposed hidden
+        debug_assert_eq!(hidden & visible, hidden);
 
         // Side overlaps
         debug_assert!((white & black).is_empty());
 
         // Lower piece overlaps
-        debug_assert!((lower_rock & lower_paper).is_empty());
-        debug_assert!((lower_rock & lower_scissors).is_empty());
-        debug_assert!((lower_rock & lower_wise).is_empty());
-        debug_assert!((lower_paper & lower_scissors).is_empty());
-        debug_assert!((lower_paper & lower_wise).is_empty());
-        debug_assert!((lower_scissors & lower_wise).is_empty());
+        debug_assert!((hidden_rock & hidden_paper).is_empty());
+        debug_assert!((hidden_rock & hidden_scissors).is_empty());
+        debug_assert!((hidden_rock & hidden_wise).is_empty());
+        debug_assert!((hidden_paper & hidden_scissors).is_empty());
+        debug_assert!((hidden_paper & hidden_wise).is_empty());
+        debug_assert!((hidden_scissors & hidden_wise).is_empty());
 
         // Upper piece overlaps
-        debug_assert!((upper_rock & upper_paper).is_empty());
-        debug_assert!((upper_rock & upper_scissors).is_empty());
-        debug_assert!((upper_rock & upper_wise).is_empty());
-        debug_assert!((upper_paper & upper_scissors).is_empty());
-        debug_assert!((upper_paper & upper_wise).is_empty());
-        debug_assert!((upper_scissors & upper_wise).is_empty());
+        debug_assert!((visible_rock & visible_paper).is_empty());
+        debug_assert!((visible_rock & visible_scissors).is_empty());
+        debug_assert!((visible_rock & visible_wise).is_empty());
+        debug_assert!((visible_paper & visible_scissors).is_empty());
+        debug_assert!((visible_paper & visible_wise).is_empty());
+        debug_assert!((visible_scissors & visible_wise).is_empty());
 
         // Wise on RPS
-        debug_assert!((upper_wise & lower_rps).is_empty());
+        debug_assert!((visible_wise & hidden_rps).is_empty());
 
         true
     }
